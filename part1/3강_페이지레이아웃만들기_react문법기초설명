@@ -1,0 +1,153 @@
+페이지 레이아웃 만들기 (React 기초문법)
+
+웹개발하려면 우선 유저들이 방문할 웹페이지같은게 있어야할거아닙니까
+
+그래서 가장 먼저 웹페이지 레이아웃 만드는 법을 알아봅시다. 
+
+page.jsx 파일이 메인페이지라서 거기에 코드짜면 되는데 
+
+레이아웃 만들 땐 React 문법을 이용해야합니다. Next.js는 React 위에 얹혀있는 프레임워크같은거라서요. 
+
+우선 저번시간 프로젝트 열어서 page.jsx 안의 html 내용과 global.css 안의 내용은 지우고 시작해봅시다. 
+
+
+
+실은 리액트라고 다른거 없고 html css 문법 그대로 쓰면 레이아웃 만들 수 있는데 
+
+리액트에선 html css가 아니라 JSX 라는 문법을 사용하게 되어있습니다.
+
+생긴건 html과 똑같은데 차이가 몇개 있습니다. 
+
+
+
+
+JSX 문법 1. return( ) 안에 HTML 넣을 때
+
+
+Next.js에선 페이지마다 return( ) 안에 html 내용을 적으면
+
+그걸 페이지로 만들어서 보여줍니다. 
+
+근데 return ( ) 안에 html을 넣을 때 
+
+
+
+return (
+  <div>
+    어쩌구
+  </div>
+)
+언제나 하나의 html 태그로 시작해서 하나의 html 태그로 끝나야합니다. 
+
+
+
+
+return (
+  <div></div>
+  <div></div>
+)
+
+이런건 안됩니다. 
+
+<div> 2개 나란히 넣고 싶으면 하나의 <div>로 더 감싸셈 
+
+<div>를 더 넣기 싫으면 <></> 이런 무의미한 태그로 감싸도 됩니다. 
+
+
+
+
+
+
+
+JSX 문법 2. class 말고 className 
+
+
+html css는 원래 하던대로 똑같이 작성할 수 있는데 
+
+다만 html에 class명을 집어넣을 때 class=" " 말고 className=" " 입력하면 됩니다. 
+
+JSX 안에서 자바스크립트 문법들을 사용할 수도 있는데
+
+자바스크립트 class 문법과 겹칠 수 있으니 className=" " 으로 쓰게 되어있습니다. 
+
+
+
+export default function Home() {
+  return (
+    <div>
+      <h4 className="title">애플후레시</h4>
+      <p className="title-sub">by dev kim</p>
+    </div>
+  )
+}
+
+(global.css 파일)
+
+body {
+  margin : 0;
+  background-color: #303030;
+  color : white
+}
+.title {
+  text-align: center;
+  margin-top: 150px;
+}
+.title-sub {
+  text-align: center;
+}
+그래서 메인페이지 디자인같은걸 넣어봤습니다. 
+
+
+
+
+
+
+
+JSX 문법 3. html 안에 변수 넣을 땐 { }
+
+
+JSX 문법 특징인데 변수를 html 중간에 바로바로 넣어서 보여줄 수 있습니다. 
+
+쌩자바스크립트 사용하려면 "html 찾아서 내부 글자를 이걸로 바꿔주세요~" 라고 한 줄 길게 써야할텐데
+
+리액트는 그딴거 필요없음 
+
+
+export default function Home() {
+  let name = 'park';
+  let link = 'https://naver.com';
+  return (
+    <div>
+      <h4 className="title">애플후레시</h1>
+      <p className="title-sub">by dev {name}</p>
+      <a href={link}>링크</a>
+    </div>
+  )
+}
+
+변수를 html에 넣고 싶으면 { } 중괄호 열어서 변수명만 넣으면 됩니다. 
+
+className, id, href 이런 속성들에도 변수를 넣을 수 있는데 거기도 { } 중괄호만  열면 됩니다. 
+
+
+
+
+
+
+JSX 문법 4. style 넣고 싶으면 object 자료형으로 
+
+
+export default function Home() {
+  return (
+    <div>
+      <h4 className="title" style={{ color : 'red', fontSize : '20px' }}>애플후레시</h4>
+      <p className="title-sub">by dev {name}</p>
+    </div>
+  )
+}
+
+className 말고 style을 집어넣어서 빠르게 스타일을 줄 수도 있습니다. 
+
+보기는 더러울 수 있는데 애니메이션같은거 주려고 동적으로 스타일 변경할 때 가끔 씁니다. 
+
+style은 항상 object 자료형식으로 작성한 후에 style={ } 안에 넣으면 됩니다. 
