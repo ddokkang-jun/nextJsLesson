@@ -40,7 +40,11 @@ Next.js 프로젝트 생성은
 
 3. 그럼 터미널이라는게 나오는데 
 
-npx create-next-app@latest --experimental-app
+npx create-next-app@latest --experimental-app 을 치고 엔터
+
+what is your project name? fresh (나의 프로젝트 이름 작명)
+
+
 
 이거 그대로 입력하고 엔터누르면 프로젝트 생성 끝입니다.
 
@@ -62,9 +66,20 @@ Visual studio code 에디터 켠 다음에 File - Open Folder 누른다음에 �
 
 
 
-5. page.jsx가 메인페이지임
+5. "이건 저랑 버전 맞추는게 좋습니다"`
 
-거기다가 html css js로 코드짜면 됩니다. 
+"아직도 대참사 업데이트가 많아서 최신버전 쓴다고 좋은게 아님 "
+
+"package.json 파일 열고 - next 부분을 13.2.4 로 바꾸고 - 터미널열어서 npm install 누릅시다."
+
+< "이걸 안하고 최신버전이라고 좋타고 쓰면 npm run dev 해도 잘 안됨."
+
+
+
+
+6. page.js 가 메인페이지임
+
+거기다가 코드짜면 됩니다. 
 
 
 
