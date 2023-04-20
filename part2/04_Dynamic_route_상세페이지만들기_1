@@ -1,0 +1,345 @@
+상세페이지 만들기 1 (Dynamic route) 15 분
+
+
+
+0:00 저번시간 숙제
+
+2:00 상세페이지 만들기
+
+4:38 dynamic route 문법
+
+7:13 document 1개 찾아오려면 findOne
+
+10:41 페이지마다 다른 글 보여주고 싶은데요 
+
+
+
+오늘의 숙제 :
+
+하단 참고
+
+
+
+
+지금 /list 페이지에 모든 글제목들이 잘 뜨고 있는데 (안뜨면 만들어오십시오)
+
+실제 게시판처럼 글 누르면 상세페이지로 이동하는 기능을 만들어봅시다.
+
+뭐든 어떻게 만들지 모르겠다면 한글로 기능정의부터 하면 됩니다. 
+
+
+
+1. 글 제목을 누르면 
+
+2. 상세페이지로 이동하고 
+
+3. 그 페이지에선 DB에서 그 게시물을 가져와서 보여줌 
+
+이게 끝 아닙니까 
+
+이거 그대로 코드로 구현만 하면 되는겁니다. 
+
+하지만 문제가 있는데 상세페이지 URL을 어떻게 구성할지 잠깐 고민해봅시다. 
+
+
+
+
+
+만들 페이지가 너무 많다
+
+
+글마다 상세페이지가 있어야하는데 상세페이지는 어떤 URL로 만드는게 좋을까요? 
+
+예를 들어 네이버 블로그 같은 경우
+
+/어쩌구/글번호 
+
+이렇게 URL을 만들어놓으니 우리도 비슷하게 따라해봅시다. 
+
+
+
+지금 글이 3개 있다고 가정해보면 
+
+/detail/1로 접속시 1번글 내용
+
+/detail/2로 접속시 2번글 내용
+
+/detail/3로 접속시 3번글 내용
+
+보여주면 될 것 같군요. 그래서 각각 저런 이름으로 폴더 생성하면 개발 끝입니다. 
+
+
+
+하지만 글이 100개 있으면 어떻게하죠? 
+
+폴더도 100개 만들어두면 되긴하는데
+
+그게 싫다면 dynamic route라는걸 사용합시다. 
+
+이거 쓰면 폴더 하나로 수많은 URL을 만들어낼 수 있습니다. 
+
+
+
+
+
+
+dynamic route 만드는 법
+
+
+
+폴더를 만들 때 폴더이름을 
+
+[폴더이름] 이렇게 만들면 '이 부분에 아무거나 입력했을 때' 라는 뜻이 됩니다. 
+
+
+
+예를 들어 /photo/[어쩌구]/page.js 이렇게 만들어놓으면
+
+누가 /photo/아무문자 로 접속했을 때 page.js 를 보여줍니다.
+
+
+
+예를 들어 /detail/[어쩌구]/page.js 이렇게 만들어놓으면
+
+누가 /detail/아무문자 로 접속했을 때 page.js 를 보여줍니다.
+
+
+
+그래서 이렇게 구성해놓으면 아까처럼 수많은 폴더를 직접 만들 필요가 없으니까 이거 쓰는게 낫겠죠?
+
+맘에들면 이걸 쓰도록 합시다. 
+
+
+
+
+
+
+▲ 그래서 저도 이렇게 만들어봤습니다.
+
+작명은 진짜 아무렇게나 하면 됩니다. 
+
+
+그럼 이제
+
+/detail/1
+
+/detail/2
+
+아무렇게나 접속해도 해당 page.js가 잘 뜨는군요. 
+
+
+
+
+
+
+페이지를 만들어봅시다 
+
+
+그래서 /detail/어쩌구로 접속하면 게시물 하나의 상세내용을 보여줄 페이지도 만들어봅시다.
+
+
+
+(detail/[]/page.js)
+export default async function Detail() {
+  return (
+    <div>
+      <h4>상세페이지임</h4>
+      <h4>글제목</h4>
+      <p>글내용</p>
+    </div>
+  )
+}} 
+
+▲ html은 대충 상세페이지스럽게 만들면 될텐데 
+
+거기에 게시물을 하나 채워줘야하지 않겠습니까. 
+
+
+
+게시물 하나만 MongoDB에서 찾아서 가져오고 싶으면 
+
+db.collection(컬렉션명).findOne(찾을document내용)
+이런 코드 사용하면 됩니다. 
+
+findOne() 안에는 object { } 자료를 넣으면 그 내용이 포함된 document 하나를 가져다줍니다. 
+
+예를 들어 findOne({name : 'kim'}) 적으면 name : 'kim' 이 저장된 document를 가져옵니다.
+
+
+
+
+
+
+▲ 그래서 여러분도 DB에 저장된 게시물 하나 아무거나 가져와서 html 페이지에 보여주도록 합시다.
+
+근데 게시물 하나를 정확히 찾아오고 싶을 땐
+
+.findOne({ _id: ObjectId('63ce8d2b10e3e9fd2d7e0c0b') }) 이렇게 _id로 가져와서 보여주는게 좋습니다.
+
+_id는 document마다 유니크해서 그렇습니다. 
+
+
+
+import { ObjectId } from "mongodb";
+import { connectDB } from "@/util/database.js"
+
+export default async function Detail() {
+  let db = (await connectDB).db('forum')
+  let result = await db.collection('post').findOne({_id : new ObjectId('63ce8d2b10e3e9fd2d7e0c0b')});
+  console.log(result)
+
+  return (
+    <div>
+      <h4>상세페이지임</h4>
+      <h4>{result.title}</h4>
+      <p>{result.content}</p>
+    </div>
+  )
+}} 
+
+▲ 그래서 /detail/[어쩌구]/page.js 파일에 이렇게 작성해봤습니다. 
+
+이러면 /detail/어쩌구 접속시 DB에서 게시물을 하나 가져와서 html로 보여줍니다. 
+
+(참고) ObjectId로 document를 찾고 싶으면 new ObjectId() 사용하면 됩니다. 상단에서 import 해와야함 
+
+
+
+
+
+
+유저가 URL에 글id 입력하면 그걸 가져오자
+
+
+
+근데 뭔가 문제가 있습니다.
+
+/detail/1 접속하든 /detail/2 접속하든 똑같은 게시물만 보여줄 것 같은데요?
+
+
+
+그럼 
+
+/detail/1 접속하면 1번게시물
+
+/detail/2 접속하면 2번게시물 
+
+가져오라고 코드 수정하면 될듯요 
+
+
+
+하지만 DB에 있는 게시물마다 숫자번호같은게 없고 _id는 있는데 그걸 이용합시다. 
+
+/detail/게시물의_id
+
+로 접속하면 그 _id를 가진 게시물을 DB에서 가져와서 html에 보여달라고 코드짜봅시다. 
+
+
+
+
+
+
+
+
+유저가 URL에 입력한 내용 가져오는 법
+
+
+
+[어쩌구] 를 이용해서 dynamic route를 만들어뒀다면
+
+그 dynamic route 부분에 입력한 내용을 가져오는 방법도 있습니다. 
+
+
+export default async function Detail(props) {
+  console.log(props)
+  (생략)
+
+page.js 컴포넌트에 파라미터를 아무거나 등록해두면 
+
+[어쩌구] 자리에 유저가 입력한 내용을 props변수에 자동으로 담아줍니다.
+
+진짠지 /detail/123 같은 URL로 방문해서 출력해봅시다. 그럼 { 어쩌구 : '123' } 출력될걸요
+
+[어쩌구] 자리에 유저가 입력한 내용을 전문용어로 "URL 파라미터"라고 합니다. 
+
+
+
+
+import { ObjectId } from "mongodb";
+import { connectDB } from "@/util/database.js"
+
+export default async function Detail(props) {
+  let db = (await connectDB).db('forum')
+  let result = await db.collection('post').findOne({_id : new ObjectId(props.params.어쩌구)});
+
+  return (
+    <div>
+      <h4>상세페이지임</h4>
+      <h4>{result.title}</h4>
+      <p>{result.content}</p>
+    </div>
+  )
+}} 
+
+그래서 이렇게 작성했더니
+
+/detail/게시물의_id 접속했을 때 해당 게시물내용을 잘 보여주는군요. 
+
+
+
+
+
+Q. 유저가 천재도 아니고 주소창에 '/detail/게시물의_id' 이걸 어떻게 입력함?
+
+- 클릭시 거기로 이동하는 링크만들어두면 됩니다. 
+
+
+
+
+오늘의 결론은
+
+- 많은 URL을 한 번에 만들고 싶으면 dynamic route 문법을 사용합시다. 
+
+- MongoDB에서 게시물 하나만 찾고 싶으면 .findOne() 씁시다. 
+
+- dynamic route로 만든 URL에 적은 문자를 가져오고 싶으면 컴포넌트에서 params 출력해보면 됩니다.
+
+
+
+
+결론 :
+< app폴더안에 
+< detail폴더 만들고 그안에
+< [id]폴더 만들고 그안에
+< page.js 만들자
+
+그리고 Detail 페이지의 코드는
+
+import { ObjectId } from "mongodb";
+import { connectDB } from "@/util/database.js"
+
+export default async function Detail(props) {
+  let db = (await connectDB).db('forum')
+  let result = await db.collection('post').findOne({_id : new ObjectId(props.params.어쩌구)});
+
+  return (
+    <div>
+      <h4>상세페이지임</h4>
+      <h4>{result.title}</h4>
+      <p>{result.content}</p>
+    </div>
+  )
+}} 
+
+
+
+
+오늘의 숙제 :
+
+유저가 /detail/게시물_id 로 접속하면
+
+그 (게시물_id)를 가진 게시물을 DB에서 가져와서 보여주는 기능을 완성했는데 URL을 직접 입력해서 이동하는건 너무 어렵군요. 
+
+/list 페이지에서 글제목 누르면 알맞은 상세페이지로 접속할 수 있게 링크를 다음시간까지 만들어옵시다. 
+
+힌트는 <Link>태그 쓰면 된다고 했습니다. 
