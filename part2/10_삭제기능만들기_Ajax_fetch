@@ -1,0 +1,312 @@
+삭제기능 만들기 1 (SEO, Ajax)
+
+
+
+
+
+
+0:00 글목록을 client component로 만들기
+
+2:37 client component에서 DB데이터가 필요하다
+
+6:18 server component에서 DB데이터 가져와서 props 전송하자
+
+8:56 Ajax 써도 서버로 요청가능
+
+
+
+
+글마다 삭제버튼을 만들고
+
+누르면 글을 DB에서 삭제하는 기능을 만들어봅시다.
+
+작성, 수정기능 만들 때 했던 내용과 비슷할 것 같아서 여러분이 알아서 하면 되는데 
+
+근데 이번엔 삭제시 글목록에서 글이 사라지는 UI 애니메이션같은걸 넣어봅시다.
+
+
+
+
+
+삭제버튼누르면 애니메이션 넣으려는데
+
+
+
+
+
+▲ 글목록에 삭제버튼 하나 만들고
+
+삭제버튼 누르면 그게 담긴 박스를 서서히 사라지게 만들자는겁니다. 
+
+그럼 "삭제버튼 누르면 그게 담긴 박스를 서서히 사라지게 해주세요" 라고 코드짜면 될텐데 
+
+그런 기능은 client component 안에서만 작성할 수 있으니 client component를 만들어서 코드짜면 되겠습니다. 
+
+
+하지만 지금 있는 /list/page.js 파일을 전부 client component로 바꿔버리는 것 보다
+
+JS 기능이 필요한 일부분만 client component로 바꾸는게 낫다고 했으니 그렇게 합시다. 
+
+
+
+(/list/ListItem.js)
+
+'use client'
+
+export default async function ListItem() {
+  return (
+    <div>
+      { result.map((a,i)=>
+          <div className="list-item" key={i}>
+            <Link href={'/detail/' + result[i]._id}>{result[i].title}</Link>
+            <Link href={'/edit/' + result[i]._id} className="list-btn">✏️</Link>
+            <p>1월 1일</p>
+          </div>
+      )}
+    </div>
+  )
+}
+
+▲ 근처에 client component 파일 하나 만들어서 글목록 UI를 옮겼습니다. 
+
+
+
+(/list/page.js)
+
+import ListItem from './ListItem.js'
+
+export default async function List() {
+  return (
+    <div className="list-bg">
+      <ListItem/>
+    </div>
+  )
+}
+▲ 그리고 그 컴포넌트를 /list 페이지안에 넣어봤습니다.
+
+끝 
+
+
+하지만 "ListItem 컴포넌트 안에 result가 정의되지 않았다"는 에러가 뜨는군요. 
+
+해결책은 2가 있을 것 같은데 
+
+1. List 컴포넌트에 있던 result 변수를 ListItem까지 props 전송하거나
+
+2. ListItem 컴포넌트에서 DB데이터를 가져오거나 
+
+그러면 되는데 1번은 너무 쉬우니 2번에 대해서 좀 알아봅시다. 
+
+
+
+
+
+client component에서 DB데이터 가져오려면
+
+
+'use client'
+
+export default function ListItem(){
+  useEffect(()=>{
+    let result = (서버에 요청해서 DB데이터 가져오는 코드)
+  },[])
+
+  return (
+    <div>{result}</div>
+  )
+}
+client component에 적은 코드는 유저들이 볼 수 있어서 DB와 직접 통신하는 코드는 적으면 안됩니다.
+
+그래서 위처럼 코드짜면 DB데이터를 가져와서 html에 보여줄 수 있습니다.
+
+- 변수보다는 state 쓰는게 좋아보이는군요. 
+
+- useEffect는 쓸데없는 코드 보관하는 곳이고 보통 서버로 데이터 요청하는 코드도 여기 적습니다. 
+
+
+그런데 단점이 있습니다.
+
+페이지 로드시 유저가 텅 빈 html을 먼저 보게 되고
+
+조금 시간이 지나야 html 내용이 채워진다는 겁니다. 
+
+(왜냐면 useEffect안의 코드는 html이 다 로드된 후에 실행되어서 그렇습니다.)
+
+
+이게 왜 단점이냐고요?
+
+일반 유저들에게는 상관없는데 
+
+검색엔진 봇들이 페이지를 수집하려고 방문하면 텅 빈 html을 발견하고 실망하고 돌아갈 수 있기 때문에 
+
+검색엔진 노출 측면에서 단점이 있을 수 있습니다. 
+
+(실은 결국 수집은 하긴 하는데 다른 사이트보다 수집시간이 좀 느립니다)
+
+
+그래서 검색노출이 중요한 페이지를 만들 때는
+
+client component로 만들어서 거기서 서버데이터를 가져오는 짓거리는 피하는게 좋습니다.
+
+
+
+
+
+
+
+
+▲ 그래서 SEO가 중요하면
+
+client component에서 DB 데이터를 가져오지말고
+
+부모 server component에서 DB데이터를 가져온 다음 client component로 props 전송합시다. 
+
+
+Nextjs 에선 server / client component 들을 보여줘야할 때 최대한 서버에서 미리 html을 만들어서 보내려고 하기 때문에 
+
+이렇게 하면 client component도 DB 데이터를 미리 채워서 유저에게 보내줍니다. 
+
+물론 검색노출이 필요없는 페이지들은 맘대로 합시다.
+
+
+진짠지 궁금하면 크롬 개발자도구에서 Javascript disable 해놓고 페이지 방문해서 잘 보이나 테스트해봅시다.
+
+
+
+
+
+
+그래서 props 전송해봅시다
+
+
+List 컴포넌트 -> ListItem 컴포넌트로 result변수를 props 전송하려면
+
+
+(/list/page.js)
+
+<ListItem result={result} />
+1. 자식컴포넌트 쓰는 곳에 작명={전송할데이터} 넣어줍니다.
+
+
+
+
+(/list/ListItem.js)
+
+'use client'
+
+export default async function ListItem({result}) {
+  return (
+    <div>
+      { result.map((a,i)=>
+          <div className="list-item" key={i}>
+            <Link href={'/detail/' + result[i]._id}>{result[i].title}</Link>
+            <Link href={'/edit/' + result[i]._id} className="list-btn">✏️</Link>
+            <button>🗑️<button>
+            <p>1월 1일</p>
+          </div>
+      )}
+    </div>
+  )
+}
+2. 자식은 props 파라미터 등록 후 사용하면 됩니다. 
+
+
+(참고) props 파라미터 등록할 때 props라고 쓰지 않고
+
+중괄호 안에 작명한 props 이름들을 넣을 수 있습니다. 
+
+지금은 result를 넣어봤는데 
+
+그러면 props사용시 props.result가 아니라 result만 써도 됩니다. 
+
+
+
+
+
+
+Ajax 사용해도 서버로 요청가능
+
+
+<form>태그 쓰면 서버로 GET, POST 요청이 가능하댔는데
+
+fetch() 라는 함수 사용해도 서버로 GET, POST, PUT, DELETE 요청이 가능합니다.
+
+이걸 ajax 라고 부릅니다.
+
+장점은 <form> 사용시 요청보내면 항상 새로고침이 되는데
+
+ajax는 새로고침없이 요청을 보낼 수 있습니다. 
+
+그렇게 몰래 요청보내고 싶을 때 ajax를 사용해봅시다. 
+
+
+
+<button onClick={()=>{
+  fetch('/URL')
+}}>🗑️</button>
+fetch()를 실행하면 /URL 경로로 GET요청이 갑니다. 
+
+진짠지 서버기능하나 만들어서 테스트해봅시다. 
+
+
+
+
+<button onClick={()=>{
+  fetch('/URL').then(()=>{
+    console.log('완료')
+  })
+}}>🗑️</button>
+요청완료시 (서버응답시) 특정 코드를 실행하고 싶으면 .then(()=>{ }) 붙여서 그 안에 적도록 합시다.
+
+
+
+
+<button onClick={()=>{
+  fetch('/URL', { method : 'POST', body : '안녕' })
+}}>🗑️</button>
+이러면 POST, PUT, DELETE 요청도 가능합니다.
+
+요청시 서버로 데이터도 전송하고싶으면 body : 항목에 넣읍시다.
+
+
+
+
+
+
+
+서버로 array, object 전송하고 싶으면
+
+
+
+서버와 데이터 주고받을 땐 원래 문자나 숫자밖에 주고받을 수 없습니다.
+
+array, object 그런 이상한건 안됩니다.
+
+하지만 array, object에 따옴표를 쳐 두면 문자취급을 해주기 때문에 그렇게 전송할 수는 있습니다.
+
+큰 따옴표 쳐둔 array, object 자료들을 JSON이라고 부릅니다.
+
+{name : 'kim'} → '{"name" : "kim"}' 이러면 JSON 되는거고 이걸 서버로 전송할 수는 있습니다. 
+
+
+JSON.stringify( {name : 'kim'} )
+근데 귀찮게 직접 따옴표 칠 필요는 없고
+
+JSON.stringify() 안에 담으면 JSON으로 변환해서 그 자리에 남겨줍니다.
+
+그래서 이렇게 해두면 서버로 array, object 전송가능
+
+
+
+JSON.parse( '{"name" : "kim"}' )
+참고로 JSON에 붙은 따옴표를 제거해서 array, object로 만들고 싶으면 JSON.parse() 안에 넣어봅시다. 
+
+
+
+오늘의 숙제 : 
+
+삭제버튼 누르면 해당 글이 DB에서 삭제되는 기능을 만들어옵시다.
+
+- 오늘 배운 Ajax를 이용해봅시다. 
+
+- 애니메이션은 안배웠으니 무시하고 삭제버튼 누르고 새로고침하면 글이 삭제되어있으면 성공입니다.

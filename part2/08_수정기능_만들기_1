@@ -1,0 +1,252 @@
+수정기능 만들기 1
+
+
+
+
+오늘 수업 요약 :
+
+할일 먼저 정하기 :
+
+1. 글마다 수정버튼, 누르면 수정페이지 이동
+
+2. 수정 페이지 만들기 (글 가져와서 채워놔야함)
+
+3. 발행 누르면 DB에 있던 글 수정
+
+
+이번 강의에서는 1번 2번 기능까지만 만듬 3번 기능은 다음 강의에서 진행함.
+
+1번 2번 기능은 수정페이지 HTML 만들기임.
+
+
+폴더랑 파일 만들기
+
+app < edit < page.js
+
+
+import { ObjectId } from "mongodb";
+import { connectDB } from "../../../../util/database";
+
+export default async function Edit(props) {
+	let db = (await connectDB).db("forum");
+	let result = await db
+		.collection("post")
+		.findOne({ _id: new ObjectId(props.params.id) });
+
+	return (
+		<div className="p-20">
+			<h4>수정페이지입니다.</h4>
+			<form action="/api/post/editList" method="POST">
+				<input name="title" defaultValue={result.title} />
+				<input name="content" defaultValue={result.content} />
+				<input type="hidden" name="_id" defaultValue={result._id.toString()} />
+				<button type="submit">전송</button>
+			</form>
+		</div>
+	);
+}
+
+
+
+
+
+0:00 모르는데 기능정의는 어떻게 함
+
+1:29 수정기능 1. 글마다 수정버튼과 페이지
+
+5:29 수정기능 2. 수정페이지에 글 가져와서 채우기
+
+10:27 document 수정은 updateOne
+
+
+
+
+글 수정기능은 어떻게 만들죠?
+
+직접 글 수정기능이 어떻게 동작하는지 자세히 한글로 정의하고
+
+그거 그대로 코드로 옮기면 된다고 했습니다. 그럼 혼자서도 코딩가능
+
+그 기능이 어떻게 동작하는지 모르면 언제나 유사한 다른 사이트 참고하면 됩니다. 
+
+
+다른 사이트 게시판들은  
+
+1. 글마다 있는 수정버튼누르면 수정페이지로 이동함 (수정페이지 URL도 정해야할듯)
+
+2. 수정페이지는 글작성페이지랑 비슷하게 생겼는데 기존 글을 DB에서 불러와서 넣어줘야함 
+
+3. 전송버튼 누르면 DB에 있던 document를 작성내용으로 수정하면 됩니다.
+
+근데 유저가 DB 데이터를 직접 수정하면 큰일나니 서버에 수정을 부탁하는 식으로 코드짭시다. 
+
+
+이거 그대로 코드로 옮기면 되겠군요. 
+
+다 배운거라 MongoDB 안에 있는 데이터 수정하는 법만 찾아보면 알아서 해볼 수 있을 것 같은데
+
+자신있으면 강의 보기 전에 직접 구현해봅시다. 
+
+겁쟁이들은 저랑 같이 1번 2번이나 해봅시다. 
+
+
+
+
+
+
+
+
+1. 수정페이지로 이동하는 버튼만들기
+
+
+
+
+
+수정버튼은 /list 목록페이지의 글제목마다 넣는게 좋겠군요. 
+
+그리고 이거 누르면 이동할 글 수정페이지 URL은 어떻게 만들까요?
+
+
+/edit/게시물id
+
+▲ 저는 이렇게 접속하면 해당 게시물 수정페이지를 보여주도록 만들고 싶습니다. 
+
+상세페이지 만들던거랑 비슷하게요. 
+
+
+
+그럼 글이 100개 있으면 수정페이지도 100개 만들까요?
+
+그래도 되겠지만 싫으면 [dynamic route] 문법을 사용합시다. 
+
+
+
+result.map((a,i)=>
+  <div className="list-item" key={i}>
+    <Link href={'/detail/' + result[i]._id}>{result[i].title}</Link>
+    <Link href={'/edit/' + result[i]._id} className="list-btn">✏️</Link>
+    <p>1월 1일</p>
+  </div>
+)
+▲ 그래서 /list/page.js 페이지에 있던 글제목 옆에 수정버튼도 집어넣어봤습니다. 
+
+그럼 누르는 순간 /edit/게시물id로 이동해주는군요. 
+
+
+
+a {
+  text-decoration: none;
+  color : black;
+} 
+▲ css 파일에 디자인도 대충 넣어봄 
+
+
+
+
+
+
+
+
+2. 글 수정페이지 만들기 
+
+
+글 수정페이지는 어떻게 생겼죠? 
+
+블로그나 게시판 서비스 아무데나 들어가보면 글 수정페이지는 작성페이지와 유사하지않습니까?
+
+그리고 그 페이지에 있는 <input>들엔 게시물 내용이 들어있을 뿐이고요. 
+
+
+
+export default async function Edit() {
+  return (
+    <div className="p-20">
+      <h4>수정페이지</h4>
+      <form action="어쩌구" method="POST">
+        <input name="title" />
+        <input name="content" />
+        <button type="submit">전송</button>
+      </form>
+    </div>
+  )
+} 
+
+그래서 /edit/[id]/page.js 파일 만들어서 레이아웃 만들어봤는데 /write 페이지 그대로 베낌 
+
+그리고 이 페이지에 DB에서 가져온 게시물을 집어넣어봅시다. 
+
+
+
+
+
+
+
+수정페이지에 DB에 있던 게시물을 넣어줘야겠는데요 
+
+
+/edit/게시물id 입력해서 수정페이지 방문하면 지금은 텅 비어있는데 
+
+해당 게시물id를 가진 글을 DB에서 가져와서 수정페이지 안에 보여주도록 합시다. 
+
+
+
+알아서 해봅시다
+
+
+
+
+
+MongoDB 데이터 수정하는 법
+
+
+MongoDB에 있던 document 수정하는 방법을 알려드릴테니 기능 마무리는 여러분이 집에가서 해보도록 합시다. 
+
+DB에 있던 document 수정문법은 쉬운데 
+
+
+await db.collection(컬렉션명).updateOne({수정할게시물정보}, { $set : {수정할내용} } ); 
+updateOne() 쓰면 되는데 안에 2개 정보들을 넣어주면 되는데 
+
+왼쪽엔 수정할 게시물을 일단 찾아야하기 때문에 수정할 게시물에 들어있던 내용을 { } 자료로 넣어주면 됩니다.
+
+보통 {_id : 어쩌구} 넣는 경우가 많습니다. 
+
+
+
+
+오른쪽엔 수정할 내용을 { } 자료로 넣으면 됩니다. 
+
+예를 들어 title 항목을 '바보'로 수정하고 싶으면 { title : '바보' } 넣으면 됩니다. 
+
+
+
+
+(참고) $set 말고 여러가지 연산자가 있습니다. 
+
+$set 연산자는 기존 값을 바꿔줍니다. 만약에 없으면 추가해줌
+
+$unset 연산자는 기존에 있던 키값을 제거해줍니다. 
+
+$inc 연산자는 기존 값이 숫자면 거기에 숫자를 더하거나 뺄 때 사용합니다. 
+
+필요할 때 찾아서 사용합시다. 
+
+
+
+
+
+
+오늘의 숙제 : 
+
+3번 기능을 완성해옵시다. 
+
+수정 페이지에서 전송버튼 누르면 DB에 있던 해당 글이 수정되어야합니다. 
+
+
+
+
+(힌트) 유저는 서버에게 게시물을 수정해달라고 요청보낼 때
+
+수많은 게시물 중에 어떤 게시물을 수정할지 그 정보도 보내줘야 잘 수정할 수 있지않을까요?
+
+게시물 id 같은거요 
