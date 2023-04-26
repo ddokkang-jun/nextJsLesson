@@ -60,6 +60,7 @@ JSX에선 <img></img> 이렇게 쓰거나 <img /> 이렇게 쓰거나 합시다.
 2. 이미지는 public 폴더에 보관하고 
 
 <img src="/port1.png" alt="설명"/>  
+
 /부터 시작해서 이미지경로 넣으면 됩니다.
 
 (public 폴더에 있는 것들은 사이트 발행시 자동으로 사이트 root 경로로 이동됩니다)
@@ -85,6 +86,7 @@ export default function Home() {
       <Image />
     <div/>
 )} 
+
 1. 상단에서 <Image> 태그를 import 해온 뒤에 이미지 보여주길 원하는 곳에서 <Image/> 사용하면 됩니다. 
 
 
@@ -98,6 +100,7 @@ export default function Home() {
       <Image src={이미지} alt="설명"/>
     <div/>
 )} 
+
 2. 이미지 경로를 넣으려면 이미지를 상단에서 import 해온 뒤에 그걸 넣어야합니다. 
 
 ./ 이건 현재경로라는 뜻이라 이미지가 현재파일 바로 옆에 있으면 위처럼 작성하면 됩니다. 

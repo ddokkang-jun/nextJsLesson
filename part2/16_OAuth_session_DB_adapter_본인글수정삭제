@@ -1,0 +1,267 @@
+회원기능 만들기 : OAuth + session방식 사용하기
+
+
+
+
+0:00 OAuth + session 쓰려면 DB adapter 설정 필요
+
+3:06 진짜로 세션정보가 DB에 저장되나 확인
+
+6:21 본인이 쓴 글만 수정/삭제?
+
+
+
+
+Next-auth 라이브러리를 사용하면 기본적으로 모든 방식이 JWT입니다.
+
+유저 세션데이터를 DB에 저장해두지 않고 JWT만 유저에게 보내고
+
+유저가 로그인이 필요한 페이지 방문시 유저가 제출한 JWT만 검사해서 입장시켜주는 방식입니다. 
+
+
+
+아무튼 JWT를 사용하면 로그인 구현은 쉬워지는데
+
+JWT방식의 단점같은게 마음에 안들어서 
+
+session 방식으로 회원기능을 만들고 싶으면 DB adapter 기능을 쓰면 됩니다.
+
+
+
+
+DB adapter 기능을 켜놓으면  
+
+1. 첫 로그인시 자동으로 유저를 회원가입 시켜서 DB에 유저 회원정보를 보관해줍니다. 
+
+2. 로그인시 자동으로 유저가 언제 로그인했는지 세션정보를 DB에 보관해줍니다.
+
+3. 서버에서 지금 로그인된 유저정보가 필요하면 JWT가 아니라 DB에 있던 세션정보를 조회해서 가져옵니다. 
+
+4. 로그아웃시 유저 세션정보는 DB에서 삭제됩니다. 
+
+
+
+그래서 가입된 유저정보를 DB에 저장하는게 필요하거나
+
+유저 로그인상태를 엄격하게 관리하고 싶으면 DB adapter 기능을 사용해봅시다. 
+
+
+
+
+
+
+MongoDB adapter 설정하기
+
+
+
+npm install @next-auth/mongodb-adapter 
+터미널 열고 이거 입력해서 설치합시다. 
+
+MongoDB말고 다른 DB에 유저 세션을 저장하고 싶으면 다른 DB adapter를 찾아서 사용하면 됩니다. 
+
+redis같은 것들 쓰면 데이터 저장시 하드말고 램을 사용하기 때문에 빨라서 session 방식 구현할 때 인기있습니다. 
+
+
+- 만약에 설치를 하는데 에러가 뜬다 하면 다음과 같이 설치해보자.
+
+npm uninstall mongodb
+npm install mongodb@4
+
+
+
+이제 코드를 추가하러 가보자.
+
+npm run dev 해주고
+
+
+
+([...nextauth].js 파일)
+
+import { connectDB } from "@/util/database";
+import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
+import NextAuth from "next-auth";
+import GithubProvider from "next-auth/providers/github";
+
+export const authOptions = {
+  providers: [
+    GithubProvider({
+      clientId: 'Github에서발급받은ID',
+      clientSecret: 'Github에서발급받은Secret',
+    }),
+  ],
+  secret : '어쩌구'
+  adapter : MongoDBAdapter(connectDB), //추가함
+};
+
+export default NextAuth(authOptions); 
+
+
+
+
+저번시간에 만든 [...nextauth].js 파일을 열어서 설정을 이렇게 바꿔줍시다.
+
+상단에서 MongoDBAdapter라는 함수랑 여러분의 DB접속용 코드를 import해서 저기에 집어넣어주면 됩니다. 
+
+그럼 session 방식으로 회원기능 만들기 끝입니다. 
+
+
+
+
+
+
+▲ 로그인해보면 저번 시간과 다르게 MongoDB에 3개의 컬렉션이 생성됩니다. 
+
+sessions에는 현재 로그인된 유저 정보가 들어있습니다. 로그인 유효기간도 적혀있음 
+
+users는 유저들 보관하는 곳입니다. 유저끼리 구분은 이메일로 합니다. 
+
+accounts는 유저계정 보관하는 곳입니다. 
+
+하나의 유저는 여러개의 계정을 가지고 있을 수 있기 때문에 여러 계정마다 이메일이 중복될 수도 있습니다. 
+
+
+
+Q. users vs accounts 차이가 뭐임? 
+
+어떤 1명의 유저가 내 사이트에 Github으로도 가입하고 Google로도 가입을 해버린 경우를 가정해봅시다.
+
+근데 이 사람의 
+
+Github 계정은 test@naver.com
+
+Google 계정도 test@naver.com 으로 되어있는 겁니다.
+
+
+
+이 경우 users 컬렉션엔
+
+test@naver.com 이메일을 가진 document 1개만 생성되는데
+
+
+
+accounts 컬렉션엔
+
+1. test@naver.com + Github이 써있는 document 
+
+2. test@naver.com + Google이 써있는 document 
+
+이렇게 2개가 생성됩니다. 
+
+이런 식으로 유저는 1명이지만 계정은 2개 이상 생성이 가능합니다. 
+
+(이메일이 같으면 같은 유저라고 자동으로 간주합니다)
+
+
+
+
+(참고) DB adapter 사용시 기본으로 설정되어있는 database에 accounts, sessions, users 3개 컬렉션들을 생성할텐데
+
+그래서 forum database에 저런 컬렉션들이 생성됩니다. 
+
+그게 싫고 다른 이름의 database에 넣고 싶으면 
+
+MongoDB 접속 URL에 물음표가 있을텐데 그거 왼쪽에 원하는 database 이름을 넣으면 됩니다. 
+
+
+
+
+
+
+
+회원기능이 들어간 게시판 
+
+
+
+지금은 아무나 모든 글 삭제가 가능합니다.
+
+보통 게시판은 본인글만 삭제할 수 있는데 이건 어떻게 만들면 될까요? 
+
+당연히 삭제요청 처리하기 전에 "요청하는 사람이 글쓴사람이랑 일치하는지" 검사하면 되는거 아니겠습니까 
+
+근데 그러려면 글 발행시 글쓴이 정보도 함께 저장하는게 좋겠군요.
+
+
+
+지금은 글 발행시
+
+{ title : 어쩌구, content : 어쩌구 } 만 저장하고 있는데
+
+{ title : 어쩌구, content : 어쩌구, author : 글쓴이이메일 } 이렇게 저장하자는겁니다.
+
+그럼 어떻게 해야하죠?
+
+유저가 글보낼 때 "니 이메일도 같이 보내라" 라고 하면 되겠군요. 
+
+
+
+근데 그러면 위험합니다.
+
+프론트엔드에 있는 모든건 유저가 간단하게 위조해서 보낼 수 있기 때문에 민감한건 항상 서버에서 출력해보는게 좋습니다.
+
+서버기능 코드짤 때도 getServerSession() 사용하면 서버에서 현재 로그인중인 유저정보를 출력해볼 수 있기 때문에
+
+유저정보는 서버에서 출력해서 사용합시다. 
+
+
+
+let session = await getServerSession(요청, 응답, authOptions) 
+
+근데 서버 기능 안에선 이렇게 가져다써야 유저정보 출력이 가능합니다.
+
+그럼 이제 /api/post/new.js 들어가서
+
+글 발행시 유저정보도 함께 저장하는 기능을 만들어봅시다. 
+
+(/api/post/new.js)
+
+import { getServerSession } from "next-auth";
+import { connectDB } from "../../../util/database";
+import { authOptions } from "../auth/[...nextauth]";
+
+export default async function handler(요청, 응답) {
+	let session = await getServerSession(요청, 응답, authOptions);
+	// console.log("글작성됨 session", session);
+	if (session) {
+		요청.body.author = session.user.email;
+	}
+	// console.log("요청.body:", 요청.body);
+	if (요청.method == "POST") {
+		if (요청.body.title == "" || 요청.body.content == "") {
+			return 응답.redirect(500, "/list");
+		}
+
+		try {
+			let db = (await connectDB).db("forum");
+			let result = db.collection("post").insertOne(요청.body);
+			return 응답.redirect(302, "/list");
+		} catch (error) {
+			console.log(error);
+		}
+	}
+}
+
+
+글 발행시 DB document에
+
+{ title : 어쩌구, content : 어쩌구, author : 글쓴이이메일 }
+
+이런 정보가 기입되어있으면 성공입니다.
+
+
+
+안해보고 답보면 머리빠짐
+
+
+
+오늘의 숙제 : 
+
+Q. 지금은 아무나 글삭제가 가능한데
+
+로그인한 유저가 본인이 작성한 글만 삭제할 수 있게 하려면
+
+서버에 만들어놓은 삭제기능을 어떻게 수정해야할까요? 
+
+- 로그아웃하거나 다른 아이디로 로그인했을 경우 글삭제가 안되면 성공입니다. 
+
+
+보면 큰일남

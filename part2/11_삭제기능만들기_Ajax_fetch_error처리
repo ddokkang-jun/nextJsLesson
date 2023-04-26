@@ -1,0 +1,218 @@
+삭제기능 만들기 2 (Ajax 추가내용과 에러처리)
+
+
+
+
+0:00 저번시간 숙제 
+
+2:57 서버와 array, object 주고받으려면
+
+5:39 에러처리 
+
+6:51 Ajax 더 배울내용
+
+
+
+
+삭제기능 만들어오라던 숙제를 같이 해보도록 합시다.
+
+나중에 혼자 코드짤 때도 제 코드 따라칠 것입니까 
+
+잘 안되어도 혼자 이것저것 뭐라도 해보는 과정에서 실력이 늡니다. 
+
+코드 따라치는건 학습이 아니고 타이핑 실력만 향상됩니다.
+
+
+
+
+
+기능부터 한글로 설명해보면 
+
+1. 삭제버튼 누르면 서버로 삭제요청 보냄 (URL, method도 정하기)
+
+2. 근데 어떤 게시물 삭제할지 게시물 _id도 보내야 삭제를 정확히 잘해줄듯요 
+
+3. 서버는 요청 들어오면 DB에서 그 게시물 삭제해줌 
+
+이러면 될 것 같으니 이거 그대로 코드로 옮겨봅시다. 
+
+
+
+
+
+1. 삭제버튼누르면 서버로 삭제요청보냄 
+
+
+fetch('/api/post/delete', {method : 'DELETE'})
+삭제버튼누르면 위 코드 실행하라고 코드짜놨는데 
+
+
+
+
+
+2. 삭제할 게시물 _id도 서버로 보내면 좋을듯
+
+
+fetch('/api/post/delete', {method : 'DELETE', body : result[i]._id})
+
+
+어떤 글을 삭제할지 정보를 안보내면 서버가 무슨 게시물을 삭제해야할지 모를테니까
+
+삭제할 글의 _id도 보내봤습니다. 
+
+
+
+
+TMI :
+
+문자나 숫자를 보낼땐 
+
+fetch('/api/post/delete', {method : 'DELETE', body : result[i]._id})
+이 코드를 보면
+body : result[i]._id 라고 보내면 잘 전달된다. 
+
+그런데 말입니다.
+
+array, object 같은 자료형을 보내고 싶을때는 저렇게 보내면 안된다.
+
+JSON.stringify()에 감싸서 보내야한다.
+
+예를들어 body: {name:"kim", age:1} 을 보낼땐
+
+
+body: JSON.stringify({name:"kim", age:1});
+
+그러면 server에서는 
+
+JSON.parse(요청.body).name; 
+
+와 같이 JSON.parse를 해줘야댐
+
+
+
+
+
+3. 서버는 요청 들어오면 DB에서 그 게시물 삭제해줌 
+
+
+/api/post/delete 경로로 DELETE 요청이 들어오면 게시물삭제해주는 API를 만들어봅시다. 
+
+
+import { connectDB } from "@/util/database"
+import { ObjectId } from "mongodb";
+
+export default async function handler(요청, 응답) {
+  if (요청.method == 'POST'){
+    let db = (await connectDB).db('forum')
+    let result = await db.collection('post').deleteOne({_id : new ObjectId(요청.body)});
+    console.log(result)
+    응답.status(200).json('삭제완료')
+  }
+}
+
+- if (요청.method == 'POST') 해준 이유는 if (요청.method == 'DELETE') 가 잘 동작하지 않는 경우가 많기때문임. 
+
+- deleteOne() 안에 document 정보를 넣으면 그걸 찾아서 삭제해줍니다. 
+
+- 유저가 전송한 데이터는 요청.body에 들어있습니다. 
+
+
+이러면 기능 완성인거 같은데 삭제버튼 누르면 삭제 잘 되나 테스트해봅시다. 
+
+뭔가 이상하게 안되는 부분이 있다면 에러메세지를 찾아보거나 
+
+의심스러운 부분에서 변수같은 것들을 출력부터해보면 답을 알 수 있습니다. 
+
+
+
+
+
+
+
+예외처리
+
+
+
+데이터베이스같은 친구들은 항상 믿음직하지 않습니다. 
+
+가끔 처리를 실패하는 경우도 있는데 그럴 경우 대처하는 코드도 짜놓는게 좋습니다. 
+
+
+import { connectDB } from "@/util/database"
+import { ObjectId } from "mongodb";
+
+export default async function handler(요청, 응답) {
+  if (요청.method == 'POST'){
+    try {
+      let db = (await connectDB).db('forum') 
+      let result = await db.collection('post').deleteOne({_id : new ObjectId(요청.body._id)});
+    } 
+    catch (error) {
+      응답.status(500)
+    }
+    
+    만약에 result 결과가 이상하면 응답.status(500)
+    result 결과가 정상이면 응답.status(200)
+  }
+}
+
+- try, catch 문법을 쓰면 try 안에 있는 코드에서 이상한 에러가 날 경우 catch 안에 있는 코드를 대신 실행해줍니다.
+
+- 수정, 삭제, 삽입 결과는 result 출력해보면 알 수 있기 때문에 그거 검사해보고 이상하면 그에맞는 응답을 해주면 좋습니다. 
+
+- 참고로 삭제못한거랑 에러는 다른 것임 
+
+
+
+
+
+
+
+
+Ajax 기능을 더 알아보자
+
+
+
+fetch('/URL')
+.then((r)=>r.json())
+.then((result)=>{ console.log(result) })
+
+서버에서 보낸 결과가 object, array 자료면 이렇게 출력해야합니다. 
+
+
+
+
+fetch('/URL')
+.then((r)=>{
+  if(r.status == 200) {
+    return r.json()
+  } else {
+    //서버가 에러코드전송시 실행할코드
+  }
+})
+.then((result)=>{ 
+  //성공시 실행할코드
+}).catch((error)=>{
+  //인터넷문제 등으로 실패시 실행할코드
+  console.log(error)
+})
+
+특정 에러상황이 발생시 대처하고 싶으면 이렇게 코드짜놓으면 됩니다. 
+
+이런건 복붙해서 씁시다. 
+
+
+
+fetch 코드가 길고 귀찮아서 편리하게 바꿔주는 axios같은 라이브러리 설치해서 쓰는 사람들이 많습니다.
+
+근데 Nextjs 13부터는 fetch가 특별한 기능이 추가되어있기 때문에
+
+server component 함수 안에서 fetch() 쓸 일이 있을 경우 그거 그대로 쓰는게 좋습니다. 
+
+지금의 client component 에선 라이브러리 설치하든 뭐하든 편한거 아무거나 대충 써도 됩니다. 
+
+
+
+
+
+다음 시간엔 애니메이션이나 만들어봅시다.

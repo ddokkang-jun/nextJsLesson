@@ -1,0 +1,326 @@
+static rendering, dynamic rendering, cache
+
+
+
+
+
+
+0:00 static, dynamic rendering
+
+3:32 static, dynamic 바꾸기
+
+6:12 GET요청 caching
+
+9:54 페이지 caching
+
+
+
+기능구현 다 했다면 언제나 그 다음에 할 일은 성능향상입니다.
+
+2개의 rendering 방법과 캐싱기능에 대해 알아봅시다. 
+
+
+
+
+build 작업
+
+
+
+
+우선 Next.js로 만든 서버를 어디 배포하려면 
+
+터미널 열어서 npm run build를 먼저 해야합니다.
+
+이상한 리액트 문법으로 작성한 코드들을 브라우저 친화적인 html, js, css 파일로 바꿔주는 작업입니다. 
+
+그 다음에 npm run start 해두면 실제로 유저 요청을 처리할 수 있는 Next.js 서버가 완성됩니다. 
+
+물론 실제 운영할 사이트면 AWS같은 클라우드에 올려서 npm run start 해놓으면 되는데 그건 나중에 해봅시다.
+
+
+
+
+
+
+
+Dynamic rendering / Static rendering
+
+
+Next.js 옛날 버전에선 SSG ISR 어쩌구로 복잡하게 설명하던 짓거리가 있는데
+
+이번 버전부터 용어와 설명이 약간 바뀌었습니다. 
+
+
+1. Next.js에서 페이지를 하나 만들면 기본적으로 static rendering 식으로 페이지를 보여줍니다.  
+
+페이지안에 fetch라든지 그런 함수가 없는 일반 페이지들은
+
+기본적으로 static rendering으로 동작하게 되어있습니다. 
+
+
+
+이게 뭐냐면 npm run build 입력하면 뭐 해준다고 했죠?
+
+html 페이지들을 만들어준다고 했습니다.
+
+그래서 유저가 접속할 때 마다 그걸 그대로 보내준다는 소리입니다. 
+
+페이지 안에 별 기능이 없어서 매번 html 페이지를 새로 만들 필요가 없으니까 그냥 그대로 보내는 것이고
+
+이 경우 매우 빠르게 페이지 전송이 가능합니다. 
+
+(유저가 100명 들어와도 페이지를 새로 만들지 않음)
+
+
+
+
+
+2. 하지만 여러분이 페이지 안에 
+
+- fetch('/URL', { cache: 'no-store' }) 로 데이터 가져오는 문법 
+
+- useSearchParams(), cookies(), headers() 
+
+- [dynamic route]
+
+이런걸 사용한다면 dynamic rendering 으로 페이지를 보여줍니다.  
+
+
+
+
+npm run build로 html 페이지를 만들어놨지만 
+
+유저가 페이지 접속시 html에 변동사항이 들어가야하기 때문에 
+
+유저가 페이지에 들어갈 때마다 html 페이지를 서버에서 다시 그려준다는 소리입니다.
+
+(유저가 100명 들어오면 페이지를 100번 만들어서 보내줌)
+
+
+
+
+Next.js는 이런 식으로 2개 방식으로 웹페이지들을 유저에게 보내줍니다. 
+
+평소에는 여러분이 신경쓸 필요 없고 자동으로 알아서 구분해줍니다. 
+
+
+
+
+
+static rendering / dynamic rendering 강제로 바꾸려면 
+
+
+
+▲ npm run build 하면 λ (람다) 표시와 ㅇ표시가 나오는데 
+
+λ로 표시되면 dynamic rendering 
+
+ㅇ로 표시되면 static rendering을 해준다는 소리입니다.
+
+(참고) 최상위 layout.js에서 회원기능에서 배울 getServerSession() 쓰면 모든 페이지가 아마 λ 일 수 있습니다.
+
+
+
+
+근데 잘 보면 /list 페이지는 λ dynamic rendering 해야하는거 아닙니까 
+
+글작성하고 삭제하면 /list 페이지에 바로바로 보여야하는데 저러면 안보일 것 같군요. 
+
+
+
+
+그걸 방지하고 이 페이지는 dynamic rendering을 하고 싶다면 
+
+
+export const dynamic = 'force-dynamic' 
+
+export default function 페이지(){
+  (생략)
+}
+
+이런 변수를 페이지에 추가하면 됩니다.
+
+'force-dynamic' 넣으면 dynamic rendering을 해주고 
+
+'force-static' 넣으면 static rendering을 해줍니다.
+
+'auto' 넣으면 자동으로 알아서 판단해줍니다. (디폴트)
+
+
+
+
+그래서 결론은 배포하기 전에 npm run build 할텐데
+
+그 때 페이지들이 dynamic/static rendering으로 원하는대로 동작중인지 잘 살펴보면 좋습니다. 
+
+
+
+
+
+
+근데 Dynamic rendering 이건 비효율적인거같은데요
+
+
+
+첫 프로젝트는 DB데이터 가져오고 그런게 없어서 static rendering 페이지들이 대부분이지만 
+
+둘째 프로젝트는 DB입출력 기능을 많이 만들어놔서 dynamic rendering 페이지들이 많습니다.
+
+
+
+
+dynamic rendering 식으로 동작하는 페이지가 많으면 
+
+유저가 그 페이지 방문마다 계속 다시 페이지를 그려야되니까 서버 부담이 심해질 수 있지 않겠습니까.
+
+그 경우 dynamic rendering시 서버자원을 절약할 수 있는 방법이 있습니다.
+
+캐싱기능을 이용하면 됩니다. 
+
+
+
+
+
+
+
+캐싱기능
+
+
+
+캐싱이 뭐냐면 데이터를 잠깐 몰래 저장해두고 그걸 재사용한다는 소리입니다. 
+
+Next.js에선 1. 페이지 캐싱 2. GET요청결과 캐싱 이런 것들이 쉽게 가능합니다. 
+
+
+
+1초마다 변하는 실시간 데이터를 보내주는게 중요한 페이지의 경우 캐싱을 쓰면 안되겠지만
+
+대부분의 페이지들은 1초 단위의 실시간 데이터가 크게 중요하지 않습니다. 
+
+심지어 우리가 만드는 게시판도 새로운 데이터가 몇 초 늦어도 별상관없지 않습니까 
+
+그러니 사이트 만들 때 비용절약 + 속도향상에 도움되는 캐싱을 도입해보도록 합시다. 
+
+
+
+
+
+
+GET요청결과 캐싱은
+
+
+export default async function 페이지(){
+  let result = await fetch('/api/어쩌구', { cache: 'force-cache' })
+
+컴포넌트 안에서 데이터 가져올 때 fetch() 를 이렇게 사용하면 캐싱기능을 자동으로 이용할 수 있는데 
+
+이러면 fetch() 명령 줄 때마다 서버에서 데이터를 새로 가져오는게 아니라 
+
+한 번 가져온 결과를 어딘가에 몰래 저장해두고 그걸 몰래 꺼내옵니다. 
+
+그럼 서버API 또는 DB 응답을 기다릴 필요가 없기 때문에 훨씬 빠르게 데이터를 가져올 수 있습니다. 
+
+
+
+
+
+fetch('/URL', { cache: 'force-cache' }) 
+
+fetch() 사용시 cache: 'force-cache' 설정을 넣어두면 캐싱해주고 
+
+앞으로 /URL로 요청할 때 마다 계속 캐싱된 결과를 가져와줍니다. 
+
+사이트 다시 npm run build 하기 전 까지 캐싱된걸 평생 보여줌 
+
+(참고) 실은 저거 안적어도 디폴트값은 cache: 'force-cache' 로 설정되어있습니다.
+
+
+
+fetch('/URL', { next: { revalidate: 60 } }) 
+
+fetch() 안에서 revalidate 옵션도 적용할 수 있는데 
+
+이러면 캐싱 결과를 60초 동안만 보관하고 사용합니다.
+
+60초가 지나면 다시 /URL로 새로 요청해서 결과를 가져오고 캐싱해줍니다. 
+
+
+
+fetch('/URL', { cache: 'no-store' }) 
+
+그거 말고 { cache : 'no-store' } 넣어두면 캐싱기능 안쓰겠다는 뜻입니다. 
+
+그래서 매번 저 코드 읽을 때 마다 서버로 요청해서 데이터를 새로 가져옵니다.
+
+실시간 데이터가 중요하면 이거 쓰면 되겠군요.
+
+
+- Next.js에선 쌩자바스크립트의 fetch() 기본함수를 업그레이드해놔서 사용가능한 문법입니다. 
+
+- server component 안에서만 캐싱기능 사용가능
+
+
+
+
+
+
+페이지단위 캐싱은 revalidate 변수쓰쇼 
+
+
+Q. 그럼 connectDB 이런거 써서 DB입출력 코드 써놓은건 캐싱할 수 없나요
+
+방법1. GET요청시 DB 데이터 보내주는 서버 API 만들어두고 fetch()로 바꾸면 캐싱기능 사용가능
+
+방법2. revalidate 옵션을 켜놓아도 페이지 단위로 캐싱이 가능합니다.
+
+revalidate 옵션을 알아봅시다. 
+
+
+
+
+(아무 page.js 파일)
+
+export const revalidate = 60;
+
+export default function Page() {
+  DB입출력하는코드~~
+  return (
+    <div>어쩌구</div>
+  )
+} 
+
+page.js 파일 위쪽에 revalidate 변수 하나 만들고 원하는 초 단위 집어넣으면
+
+특정 페이지를 원하는 시간 만큼 캐싱해둘 수 있습니다. 
+
+그래서 위처럼 적으면 60초 동안은 이 페이지 접속시 아무리 새로고침해도 미리 캐싱된 페이지를 보여줍니다. 
+
+60초가 지나면 페이지를 재생성해서 캐싱해줍니다. 
+
+
+
+Q. 그럼 방문자가 없어도 60초마다 페이지를 재생성하는건 비효율 아닙니까?
+
+- 60초마다 자동 재생성은 아니고 방문자가 있어야 페이지를 재생성해줍니다. 
+
+
+
+어떻게 보면 60초마다 static rendering 페이지 하나 생성해주는 식입니다.
+
+예전 Next.js에선 이렇게 revalidate 옵션 넣어서 페이지 만들던걸 ISR 이라고 불렀습니다.
+
+
+
+
+(참고1) 60초 지나기 전에 페이지 강제로 새로 만들라고 명령줄 수도 있습니다. on-demand revalidation 을 찾아봅시다. 
+
+(참고2) 서버 API 기능 만들 때도 revalidate 옵션기입이 가능합니다.
+
+
+
+
+▲ 참고로 여러 컴포넌트에서 같은 /url로 fetch하는 경우 중복은 알아서 제거됩니다.
+
+그래서 여러 컴포넌트에서 같은 /url로 요청하는 fetch() 잔뜩 사용해도 비효율 문제가 딱히 없습니다. 
+
+그래서 컴포넌트가 많은 경우 변수나 state 공유문제도 자동으로 해결임

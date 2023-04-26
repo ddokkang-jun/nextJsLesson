@@ -1,0 +1,278 @@
+댓글기능 만들기 3
+
+
+0:00 1. 컴포넌트 로드시 서버에서 댓글 가져와야하고 
+
+6:09 2. 가져온 데이터를 state에 저장해두고
+
+7:48 3. state를 html에 꽂아서 보여주기 
+
+9:39 오늘의 응용사항 
+
+
+
+
+저번시간에 댓글조회기능 만들어오라고 했는데 같이 만들어봅시다. 
+
+하지만 같이 해서 뭐합니까 받아쓰기 연습해봤자 받아쓰기 능력이 향상될 뿐이라 
+
+대충 알거같으면 강의 끄고 혼자 끄적이는 시간 갖는게 더 도움됩니다. 
+
+
+저번시간 힌트처럼 
+
+1. Comment 컴포넌트 로드시 서버에서 댓글 가져와야하고 
+
+2. 가져온 데이터를 state에 저장해두고
+
+3. state를 html에 꽂아서 보여줍시다. 
+
+
+
+
+
+
+1. 컴포넌트 로드시 서버에서 댓글 가져옴 
+
+
+client component 안에서 DB 데이터 가져오려면
+
+부모 server component 에서 보내줘도 되겠지만
+
+그냥 귀찮거나 client-side rendering 하고 싶으면 ajax 요청하면 됩니다. 
+
+
+
+'use client';
+import { useEffect, useState } from "react";
+
+export default function Comment(props) {
+  useEffect(()=>{
+    fetch('/api/comment/list').then(r=>r.json()).then((result)=>{
+      console.log(result)
+    })
+  },[]) 
+
+(생략)
+서버로 GET요청을 날려봅시다.
+
+서버는 그럼 요청받으면 댓글 보내주면 될 것 같군요. 
+
+
+
+
+
+(/api/comment/list.js)
+
+import { connectDB } from "@/util/database"
+import { ObjectId } from "mongodb"
+
+export default async function handler(요청, 응답) {
+    const db = (await connectDB).db('forum')
+    let result = await db.collection('comment').find({ parent : new ObjectId(???) }).toArray()
+    응답.status(200).json(result)
+  }
+} 
+
+서버기능을 만들어봤습니다.
+
+근데 .find().toArray() 라고 쓰면 모든 댓글 document를 다 가져올텐데 그게 아니라
+
+{ parent : 현재 페이지의 글 _id } 를 가지고 있는 댓글 document만 가져오는게 좋지 않을까요?
+
+그러고 싶으면 .find() 안에 조건 입력하면 됩니다.
+
+그럼 그 조건과 일치하는 document만 가져옵니다. 일종의 간단한 쿼리문/검색 기능임 
+
+
+
+Q. find() 안에 뭘 넣을 수 있는건 안배웠는데 내가 어떻게 아냐고요?
+
+- 모르는건 생각한다고 나오지 않고 검색해봐야 나옵니다. 
+
+
+
+그럼 ??? 자리에 현재 페이지의 글 _id 같은걸 입력해야되는데
+
+서버에 그런 정보는 없기 때문에 유저에게 GET요청시 보내라고 합시다. 
+
+GET요청과 동시에 데이터를 전송해주고 싶으면
+
+POST요청으로 바꾸거나 query string / URL parameter 문법들을 쓰면 된다고 했습니다. 
+
+
+
+
+
+export default function Comment(props) {
+  useEffect(()=>{
+    fetch('/api/comment/list?id=' + props._id).then(r=>r.json()).then((result)=>{
+      console.log(result)
+    })
+  },[]) 
+
+(생략)
+
+다행히 부모 컴포넌트에서 보낸 props._id 같은게 있는데 그게 현재 글의 _id 였군요.
+
+그래서 query string 문법으로 보내봤습니다. 
+
+
+
+
+
+(/api/comment/list.js)
+
+import { connectDB } from "@/util/database"
+import { ObjectId } from "mongodb"
+
+export default async function handler(요청, 응답) {
+    const db = (await connectDB).db('forum')
+    let result = await db.collection('comment').find({ parent : new ObjectId(요청.query.id) }).toArray()
+    응답.status(200).json(result)
+  }
+} 
+
+그럼 서버는 요청.query라고 쓰면 query string 으로 보낸걸 출력가능한데
+
+아까 그 ??? 자리에 넣었습니다. 
+
+진짜로 그 글의 댓글만 보내주는지 컴포넌트에서 출력해봅시다. 
+
+
+
+
+
+
+
+2. 가져온 댓글 데이터를 state에 저장해두고
+
+
+
+export default function Comment(props) {
+  let [data, setData] = useState([])
+  useEffect(()=>{
+    fetch('/api/comment/list').then(r=>r.json()).then((result)=>{
+      setData(result)
+    })
+  },[]) 
+
+(생략)
+
+data라는 state하나 만들어서 거기에 댓글 데이터들 저장해뒀습니다.
+
+
+
+
+
+
+
+3. state를 html에 꽂아서 보여주기 
+
+
+
+export default function Comment(props) {
+  let [comment, setComment] = useState('')
+  let [data, setData] = useState([])
+
+  (useEffect 생략)
+
+  return (
+      <div>
+        { 
+          data.length > 0 ?
+          data.map((a,i)=>
+            <p key={i}>{a.content}</p>
+          )
+          : '댓글없음'
+        }
+        (나머지 레이아웃 생략)
+      </div>
+  )
+} 
+
+data 출력해보면 [{ }, { }, { }] 이런 식으로 나올텐데
+
+반복문돌려서 전부 출력하라고 코드짜봤습니다. 
+
+
+
+
+
+
+그래서 댓글만들면서 새로배운거 요약하자면
+
+- document 하나 안에 저장할게 너무 많으면 다른 별도의 document로 빼도 됩니다.
+
+- useEffect 쓰면 client component 로드시 코드를 1회 실행할 수 있어서 유용합니다. 
+
+- db.collection().find() 로 원하는 document만 찾아올 수 있음 
+
+
+
+
+
+오늘의 응용사항 : 
+
+1. 댓글 작성자 이름 출력은?
+
+- 댓글 document 마다 작성자 이름도 함께 저장해두면 되는거 아닙니까
+
+
+
+2. 방금 작성한 댓글을 바로 보여주고 싶으면 어떻게 해야할까요?
+
+- 지금은 댓글작성해도 새로고침해야 보입니다. 
+
+- 댓글작성 POST요청 성공시 서버에서 댓글을 다시 보내주고 그걸 state에 저장하면 될 수도 있겠군요.
+
+
+
+3. 글마다 좋아요 기능을 만들고 싶은데 
+
+(조건) 유저는 같은 글에 중복해서 좋아요를 누를 수 없어야합니다.
+
+그러려면 좋아요누른 사람의 _id같은 것도 기록해둬야하겠군요. 
+
+그럼 좋아요 누른 갯수와 좋아요 누른 사람들을 DB에 어디에 어떻게 기록해야 좋을지 한번 생각해봅시다. 
+
+
+
+힌트 :
+
+
+글 마다 document 안에
+
+{ 좋아요갯수 : 0, 좋아요한사람의_id : [1, 2, 5, 7 ... ] }
+
+이런걸 추가해두면 유저의 중복좋아요 체크도 할 수 있고 좋아보입니다. 
+
+
+하지만 좋아요가 1억개 되면 어쩔 것입니까.
+
+그럼 document 용량이 초과할 수 있기 때문에 좋아요 갯수를 제한을 두거나
+
+좋아요한 내역을 따로 document로 만들어서 보관해도 됩니다. 
+
+
+
+좋아요 내역 보관용 컬렉션을 하나 만들고 
+
+{ 
+  누가좋아요했나 : (유저의 _id), 
+  어떤글을좋아요했나 : (글의 _id),
+} 
+
+이렇게 좋아요한사람의_id를 별도의 document로 빼고
+
+부모글이 어디였는지 적어놔도 된다는 소리입니다. 
+
+종속관계 표현만 잘하면 이렇게 찢어놔도 상관없습니다. 
+
+
+
+Q. 나중에 좋아요 갯수 출력은 어떻게 하냐고요? 
+
+조건을 만족하는 document 갯수 세어주는 문법도 있습니다. 
+
+아무튼 심심하면 좋아요기능같은거 집에가서 만들어봅시다. 

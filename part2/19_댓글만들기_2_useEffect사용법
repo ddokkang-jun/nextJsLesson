@@ -1,0 +1,278 @@
+13 분
+댓글기능 만들기 2 (useEffect)
+
+
+0:00 저번시간 숙제 
+
+6:15 유저이메일 출력은 
+
+8:37 오늘할 내용 : 댓글조회기능 만들기 
+
+10:05 오늘할 내용 : useEffect
+
+
+
+
+저번시간 숙제부터 하고 댓글조회기능 만들면서 useEffect를 배워봅시다.
+
+저번시간 숙제는 버튼눌러서 서버로 댓글 보내면 그걸 DB에 저장하라고 했습니다. 
+
+
+
+
+댓글 DB에 저장해주는 서버기능만들기 
+
+저는 댓글전송 버튼누르면 "pages"/api/comment/new 경로로 POST 요청날리라고 코드짰기 때문에 
+
+"pages"/api/comment/new.js 파일 만들어서 거기에 DB저장기능 만들어둡시다.
+
+
+
+
+(pages/api/comment/new.js)
+
+import { connectDB } from "@/util/database"
+import { ObjectId } from "mongodb"
+
+export default async function handler(요청, 응답) {
+  if (요청.method == 'POST'){
+    let 저장할거 = {
+      content : '댓글내용',
+      parent : '부모게시물_id',
+      author : '유저이메일'
+    }
+    let db = (await connectDB).db('forum');
+    let result = await db.collection('comment').insertOne(저장할거);
+    응답.status(200).json('저장완료')
+  }
+} 
+
+이렇게 코드를 짜봤습니다.
+
+근데 댓글내용, 부모게시물 _id 같은건 서버에 없으니 유저에게 보내라고 해야겠군요.
+
+
+
+
+
+유저야 댓글내용, 부모게시물 _id 전송해라
+
+
+(Comment.js)
+
+export default function Comment() {
+  (생략)
+    <button onClick={()=>{ 
+      fetch('/api/comment/new', 
+        { 
+          method: 'POST', 
+          body : JSON.stringify({comment : comment, _id : ??? }) 
+        }) 
+    }}>댓글전송</button>
+} 
+
+그래서 전송버튼을 이렇게 만들면 될 것 같은데
+
+물음표자리에 들어갈 "현재 부모게시물의 _id"는 어디있죠?
+
+아마도 <Detail> 컴포넌트에 있을거같군요. 
+
+
+
+
+
+
+그럼 <Comment>로 props 전송하면 쓸 수 있겠군요. 
+
+
+알아서 해보쇼
+
+
+
+부모컴포넌트에 있던걸 자식이 사용하려면
+
+부모컴포넌트 -> 자식컴포넌트 이렇게 props 전송해주면 됩니다.
+
+props 전송하는 법은 까먹었으면 다시 찾아봅시다. 
+
+
+
+(/detail/[]/page.js)
+
+<Comment _id={ result._id.toString() }/> 
+1. 부모가 자식컴포넌트 사용하는 곳에서 작명={전송할데이터}
+
+
+
+(Comment.js)
+
+export default function Comment(props) {
+  (생략)
+    <button onClick={()=>{ 
+      fetch('/api/comment/new', 
+      { 
+        method: 'POST', 
+        body : JSON.stringify({comment : comment, _id : props._id }) 
+      }) 
+    }}>댓글전송</button>
+} 
+
+
+2. 그리고 자식은 props 파라미터 등록 후 props.작명 사용하면 되겠군요. 
+
+버튼눌러서 서버로 데이터 전송이 잘 되고 있나 확인해봅시다. 
+
+
+유저 이메일은
+
+유저 이메일도 댓글에 기록하는게 좋을 것 같군요.
+
+
+
+(api/comment/new.js)
+
+import { connectDB } from "@/util/database"
+import { ObjectId } from "mongodb"
+import { getServerSession } from "next-auth"
+import { authOptions } from "../auth/[...nextauth]"
+export default async function handler(요청, 응답) {
+  let session = await getServerSession(요청, 응답, authOptions)
+  if (요청.method == 'POST'){
+    요청.body = JSON.parse(요청.body)
+    let 저장할거 = {
+      content : 요청.body.comment,
+      parent : new ObjectId(요청.body._id),
+      author : session.user.email
+    }
+    let db = (await connectDB).db('forum');
+    let result = await db.collection('comment').insertOne(저장할거);
+    응답.status(200).json('저장완료')
+  }
+} 
+
+이 코드에서 테스트를 할때 로그인이 안되있으면 
+
+let session = await getServerSession(요청, 응답, authOptions) 가 null 이라고 나온다.
+
+
+
+getServerSession() 쓰면 현재 유저정보 출력이 가능하니 이렇게 코드를 짜봤습니다.
+
+
+- 실은 이메일 말고 회원가입시 만든 유저 document가 따로 있으면
+
+그 유저 document의 ObjectId 같은걸 넣으면 더 정확할 수도 있습니다. 
+
+- 댓글 저장해주기 전에 if문으로 빈칸체크, 길이체크, 로그인여부 등을 체크해주면 완벽해지겠군요. 
+
+
+
+
+
+
+
+
+댓글 조회기능
+
+
+이제 댓글 조회기능을 만들어봅시다.
+
+상세페이지 접속하면 댓글을 DB에서 가져와서 보여주면 되는데 
+
+<Detail>이라는 server component에서 불러와서 <Comment>로 전송해줘도 되겠지만 
+
+그건 예전에 해봤으니까 이번엔 client component 안에서 DB 데이터를 직접 가져와서 html로 보여줍시다.
+
+
+
+client component 안에는 DB 출력문법을 직접 작성할 수 없으므로 서버에게 대신 부탁하는 식으로 코드짜면 되는데
+
+그런 코드는 보통 useEffect 안에 적습니다. 
+
+
+
+
+useEffect : 
+
+
+client component 로드시 서버에 데이터를 요청해서 받아오고 싶으면 
+
+보통 useEffect라는 곳 안에 fetch() 적어야합니다. 이게 일반적이다.
+
+
+'use client';
+import { useEffect, useState } from "react";
+
+export default function Comment(props) {
+  useEffect(()=>{
+    fetch()
+  },[]) 
+
+(생략)
+
+
+
+
+
+useEffect는 쓸데없는 코드 보관함입니다. 
+
+ajax, 타이머 이런 기능들을 넣고 싶을 때 useEffect에 보통 보관합니다.
+
+
+이상한 "특징"도 있는데
+
+1. "useEffect 안에 적은 코드는 html이 로드/재렌더링 될 때 마다 실행됩니다."
+
+그게 싫고 로드시 1회만 실행하려면 
+
+useEffect(()=>{ 
+  fetch() 
+}, [] )
+
+요렇게 하면 된다. 끝임.
+
+
+2. useEffect "안에 적은 코드"는 html "렌더링 후에 실행"됩니다. 
+
+그래서 위의 예제는 컴포넌트의 html 부터 보여주고 나서 ajax도 실행되는데 나쁜건 아닙니다. 
+
+사실 ajax요청은 좀 시간이 걸릴 수 도 있는데 그래서 아무것도 안보여준다면 사용자들이 지랄을 떨기 시작한다.
+
+원래 유저들은 참을성이 없기 때문에 텅빈 html 일부분이라도 먼저 보여줘야 좋습니다. 
+
+
+그래서
+
+- 1단계: html을 먼저보여주고
+
+- 2단계: ajax로 데이터를 가져오기 시작
+
+- 3단계: ajax로 가져온 결과를 html에 꽂아넣음
+
+이렇게 하는게 UX적으로 좋다함.
+
+
+
+
+
+오늘의 숙제 : 
+
+상세페이지 접속시 댓글을 불러와서 보여줍시다. 
+
+상세페이지 들어가면 거기 해당하는 댓글들이 보이면 성공입니다. 
+
+
+힌트:
+
+1. Comment 컴포넌트 로드시 서버로 ajax 요청해서 데이터가져옴 
+
+2. 가져온 데이터를 변수나 state에 저장해두고 
+
+3. 변수나 state에 있던 댓글 데이터를 html에 꽂아서 보여줌 
+
+이렇게 코드짜봅시다. 
+
+
+Q. ajax 요청결과를 바로 html에 꽂아넣을 순 없나요?
+
+- 그런문법 없습니다. 근데 변수에 있던건 html에 꽂아넣을 수 있음 

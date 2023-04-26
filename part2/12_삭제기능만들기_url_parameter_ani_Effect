@@ -1,0 +1,250 @@
+삭제기능 만들기 3 (query string / URL parameter)
+
+
+
+
+
+
+
+- 간단하게 GET요청 하는 방법 2가지 (query string / URL parameter)
+
+
+
+-query string
+
+fetch('/api/test?name=kim')
+
+와 같이 get요청을 하면 
+
+서버에서
+
+console.log(요청.query);
+
+로 확인해보면 {name = 'kim'} 이 잘 나올 것이다.
+
+
+
+
+-url 파라미터 문법
+
+-pages/api/abc 라는 폴더를 테스트용으로 하나 만들고
+
+abc폴더안에 [어쩌구].js 파일을 만든다.
+
+fetch('/api/abc/어쩌구');
+
+그리고 위와 같이 get요청을 한다면?
+
+export default function handler(요청, 응답) {
+	console.log(요청.query);
+}
+
+해서 사용할 수 잇다.
+
+
+
+
+
+
+
+0:00 애니메이션 넣기
+
+3:57 GET요청시에도 2개 방법 쓰면 서버로 데이터전송가능 
+
+5:11 1. query string (또는 search parameter)
+
+6:59 2. URL parameter
+
+
+
+오늘은 애니메이션 대충 넣어보고 
+
+서버로 데이터보내는 다른 이상한 방법도 알아봅시다. 
+
+
+
+
+
+애니메이션 추가는 
+
+
+
+애니메이션은 기초강의 들었으면 눈감고도 할텐데 4-step이 있습니다. 
+
+1. 애니메이션 동작 전, 동작 후의 CSS 스타일을 생각해보고
+
+2. 애니메이션 동작 전 스타일 넣어주고
+
+3. transition 스타일도 넣어주고 
+
+4. 원하는 시점에 애니메이션 동작 후 스타일을 넣어주면 됩니다. 
+
+이거 그대로 하면 A->B 로 전환하는 애니메이션은 전부 개발가능합니다. 
+
+
+
+
+1. 박스 투명도가 1에서 0으로 감소하는 애니메이션을 원하니까
+
+애니메이션 동작 전은 opacity : 1, 동작 후는 opacity : 0 스타일을 주기로 결정했습니다. 
+
+
+
+.list-item {
+  opacity: 1;
+  transition: all 1s;
+} 
+2. 그래서 삭제버튼에 이런 스타일을 추가함
+
+3. transition도 추가함 (transition이 있으면 스타일이 변경될 때 서서히 1초간 변경해줍니다.)
+
+
+
+(list/ListItem.js)
+
+<button className="list-btn" onClick={(e) => {
+  fetch('/api/post/delete', { method: 'POST', body: result[i]._id }).then(()=>{
+    e.target.parentElement.style.opacity = 0;
+    setTimeout(()=>{
+      e.target.parentElement.style.display = 'none';
+    }, 1000)
+  })
+}}>🗑️</button> 
+
+4. 버튼눌러서 Ajax요청 성공시 
+
+지금 누른 버튼의 부모 html 요소를 찾아서 opacity : 0 스타일을 주라고 했습니다.
+
+그럼 버튼누르면 transition 덕분에 1초동안 애니메이션이 진행됩니다. 
+
+그리고 1초 후엔 사라지게 만들라고 setTimeout 타이머와 display : none 스타일을 주라고 했습니다. 
+
+css 시간이 아니기 때문에 여기까지 합시다. 
+
+
+
+
+
+
+
+GET요청으로도 서버로 데이터 전송가능 
+
+
+
+POST 요청으로 데이터 전송할 때 <form>을 쓰거나 fetch() 안에 body에 넣어서 데이터를 전송할 수 있고
+
+서버에선 요청.body라고 쓰면 수신된 데이터 출력이 가능합니다. 
+
+
+
+그런데 GET요청으로도 데이터를 서버로 보내는 방법이 있습니다.
+
+URL에 데이터를 담아서 보내는겁니다. 
+
+그럼 서버에서 URL에 담긴 데이터를 출력해서 사용할 수 있습니다.
+
+
+
+그래서 간단하게 문자 한두개 보내거나 그런 경우엔
+
+POST요청보다는 GET요청 사용하는 경우가 많습니다.
+
+다만 URL에 정보가 노출되기 때문에 민감하거나 길이가 긴 데이터는 POST요청으로 전송하는게 좋습니다.
+
+예를 들어 아이디비번, 댓글, 블로그글 그런건 POST 요청이 낫겠군요. 
+
+URL에 데이터 담아서 보내는 방법은 2개가 있습니다. 
+
+
+
+
+
+
+1. query string 사용하기
+
+
+
+URL작성할 때 뒤에 물음표를 붙이고 
+
+데이터이름=값
+
+이렇게 적으면 서버로 데이터를 전송할 수 있습니다. 
+
+
+/어쩌구?a=1&b=2&c=3 
+
+이렇게 URL을 작성하면 서버로 {a:1, b:2, c:3} 이런 데이터가 전송됩니다.
+
+물음표 뒤에 오는 것들을 query string이라고 부릅니다. 
+
+
+
+console.log(요청.query)
+
+서버측에서 query string을 출력하고 싶으면 하면 됩니다.
+
+진짜 되나 query string 아무거나 넣어서 GET요청하고 서버에서 출력해봅시다. 
+
+
+
+
+
+2. URL parameter 사용하기
+
+
+전에 여러페이지 만들고 싶으면 URL parameter 만들면 된다고 했는데
+
+서버에서도 URL parameter를 넣어두면 여러개의 서버 API를 한 번에 만들 수 있습니다. 
+
+
+
+
+
+▲ 서버 URL 만들 때 파일명에 []를 붙이면 '아무문자'라는 뜻입니다.
+
+그럼 이제 누가 /api/abc/아무문자 경로로 GET, POST 요청 등을 하는 경우 
+
+[id].js 안의 코드가 실행됩니다.
+
+
+
+/api/abc/안녕
+
+/api/abc/반가워
+
+이렇게 아무 데이터나 집어넣어도 [id].js 안의 코드가 실행됩니다. 
+
+
+
+그리고 서버에선 요청.query 사용하면 URL parameter 자리에 집어넣은 문자를 맘대로 출력할 수 있습니다.
+
+그래서 URL parameter 만들어둬도 유저가 URL에 숨겨놓은 데이터를 출력해줄 수 있지 않을까요. 
+
+
+
+
+
+오늘의 응용문제 
+
+
+
+POST요청말고 GET요청을 사용해서 삭제기능을 지우고 다시 만들어봅시다.
+
+query string 또는 URL parameter 둘 중 하나 사용하면 되겠군요. 
+
+알아서 해보면 되는거라 답은 없습니다. 
+
+안하면 다음강의 못들음 
+
+
+
+
+
+
+그래서 이번 저번 강의 요약하자면
+
+1. DB document 삭제는 deleteOne() 쓰고
+
+2. ajax (fetch) 써도 서버로 GET POST PUT DELETE 요청가능하고 
+
+3. 서버로 요청시 query string / URL parameter 써도 데이터 몰래 전송가능 

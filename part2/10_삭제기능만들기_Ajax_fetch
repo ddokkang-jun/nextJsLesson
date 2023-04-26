@@ -208,6 +208,7 @@ export default async function ListItem({result}) {
     </div>
   )
 }
+
 2. 자식은 props 파라미터 등록 후 사용하면 됩니다. 
 
 
