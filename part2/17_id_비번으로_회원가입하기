@@ -152,8 +152,6 @@ export const authOptions = {
       clientId: 'Github에서 발급받은 ID',
       clientSecret: 'Github에서 발급받은 Secret',
 
-      //clientId: "dd97b66074521758e868",
-			//clientSecret: "b0ae28899595f2c7ed8b5acea9e5edbdb40588f9",
     }),
 
     CredentialsProvider({

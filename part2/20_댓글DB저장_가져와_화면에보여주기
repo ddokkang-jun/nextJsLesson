@@ -11,14 +11,9 @@
 
 
 
-저번시간에 댓글조회기능 만들어오라고 했는데 같이 만들어봅시다. 
 
-하지만 같이 해서 뭐합니까 받아쓰기 연습해봤자 받아쓰기 능력이 향상될 뿐이라 
+댓글을 작성하고 DB에 저장했으면 그걸 가져와서 사용자에게 보여주자
 
-대충 알거같으면 강의 끄고 혼자 끄적이는 시간 갖는게 더 도움됩니다. 
-
-
-저번시간 힌트처럼 
 
 1. Comment 컴포넌트 로드시 서버에서 댓글 가져와야하고 
 
@@ -61,7 +56,7 @@ export default function Comment(props) {
 
 
 
-(/api/comment/list.js)
+(pages/api/comment/list.js)
 
 import { connectDB } from "@/util/database"
 import { ObjectId } from "mongodb"
@@ -132,9 +127,13 @@ export default async function handler(요청, 응답) {
   }
 } 
 
+console.log(요청.query); 
+
+{ id: "블라블라블라ㅁㄴㅇㅁㅌㅌㅌ" }
+
 그럼 서버는 요청.query라고 쓰면 query string 으로 보낸걸 출력가능한데
 
-아까 그 ??? 자리에 넣었습니다. 
+아까 그 ??? 자리에 (요청.query.id) 넣었습니다. 
 
 진짜로 그 글의 댓글만 보내주는지 컴포넌트에서 출력해봅시다. 
 
